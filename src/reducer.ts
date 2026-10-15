@@ -226,7 +226,23 @@ function streamEnded(core: Core, ctx: Ctx, action: { key: string; ranMs: number;
   return fail(core, `no playable station in ${station.genre}`, 'stop')
 }
 
+// Asking for sound while muted unmutes: a play press that ends in silence reads as
+// a broken player. A plain mute press still mutes.
+const PLAYS_SOUND = new Set(['playGenre', 'playStation', 'playDefault', 'resume', 'toggle'])
+
 export function reduce(core: Core, action: Action, ctx: Ctx): Result {
+  const result = reduceInner(core, action, ctx)
+  if (!PLAYS_SOUND.has(action.type) || !core.player.muted) return result
+  const next = result.core.player
+  if (next.intent !== 'play' || !next.muted) return result
+  return {
+    ...result,
+    core: { ...result.core, player: { ...next, muted: false } },
+    prefs: { ...result.prefs, muted: false },
+  }
+}
+
+function reduceInner(core: Core, action: Action, ctx: Ctx): Result {
   const p = core.player
   switch (action.type) {
     case 'playGenre': {
@@ -261,7 +277,7 @@ export function reduce(core: Core, action: Action, ctx: Ctx): Result {
       }
     }
     case 'toggle': {
-      if (p.intent === 'play') return reduce(core, { type: 'pause' }, ctx)
+      if (p.intent === 'play') return reduceInner(core, { type: 'pause' }, ctx)
       return resume(core, ctx)
     }
     case 'stop': {

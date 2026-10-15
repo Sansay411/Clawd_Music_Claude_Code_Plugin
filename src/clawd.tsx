@@ -29,41 +29,66 @@ export function volumeBar(T: Table, player: Player) {
   )
 }
 
-// The eyes sit on the clay body (backgroundColor claude), so inverseText, dark
-// on the dark theme, reads as two dark eyes on orange in both themes.
+// Clawd is drawn as pixels, not font glyphs: every pixel is a cell with a
+// background colour, so the shape is the same in every font and surface (block
+// glyphs drew with gaps and bumps in the desktop app). Nine cells wide, three rows:
+//   .XEXXXEX.   head with two eyes
+//   XXXXXXXXX   body with the arms out
+//   .X.X.X.X.   four legs, which step between frames A and B
+const BODY: Record<'head' | 'body', string> = { head: '.XEXXXEX.', body: 'XXXXXXXXX' }
+const LEGS: Record<Pose['legs'], string> = { A: '.X.X.X.X.', B: '..X.X.X..' }
+
+// The eye as one cell on the clay body: dark when open, a mark when not. inverseText
+// is dark on the dark theme, so it reads as an eye on orange in both themes.
+const EYE_MARK: Record<Pose['eyes'], string> = { open: ' ', squint: '^', blink: '-', asleep: '-', dead: '×' }
+
+function pixelRow(T: Table, pattern: string, eyes: Pose['eyes']) {
+  const { Box, Text } = T
+  const cells: ReturnType<typeof Text>[] = []
+  let i = 0
+  while (i < pattern.length) {
+    const kind = pattern[i]
+    let j = i
+    while (j < pattern.length && pattern[j] === kind) j++
+    const n = j - i
+    if (kind === '.') {
+      cells.push(<Text key={`s${i}`}>{' '.repeat(n)}</Text>)
+    } else if (kind === 'E') {
+      const open = eyes === 'open'
+      cells.push(
+        <Text
+          key={`e${i}`}
+          backgroundColor={open ? 'inverseText' : 'claude'}
+          color={eyes === 'dead' ? 'error' : 'inverseText'}
+          bold
+        >
+          {EYE_MARK[eyes]}
+        </Text>,
+      )
+    } else {
+      cells.push(
+        <Text key={`b${i}`} backgroundColor="claude">
+          {' '.repeat(n)}
+        </Text>,
+      )
+    }
+    i = j
+  }
+  return (
+    <Box flexDirection="row" width={9}>
+      {cells}
+    </Box>
+  )
+}
+
 export const EYE_COLOR: ThemeKey = 'inverseText'
 
-const EYES: Record<Pose['eyes'], string> = {
-  open: '▪ ▪',
-  squint: '^ ^',
-  blink: '- -',
-  asleep: '‿ ‿',
-  dead: '× ×',
-}
-
-const LEGS: Record<Pose['legs'], string> = {
-  A: '  ▘▘ ▝▘  ',
-  B: '  ▝▘ ▘▝  ',
-}
-
-// Clawd, nine cells wide: head, eyes, body, legs.
+// Clawd, nine cells wide: head with eyes, body with arms, legs.
 export function clawdRows(T: Table, pose: Pose) {
-  const { Box, Text } = T
-  const isDead = pose.eyes === 'dead'
   return [
-    <Box flexDirection="row" width={9}>
-      <Text color="claude">{' ▐▛'}</Text>
-      <Text color={isDead ? 'error' : EYE_COLOR} backgroundColor="claude" bold>
-        {EYES[pose.eyes]}
-      </Text>
-      <Text color="claude">{'▜▌ '}</Text>
-    </Box>,
-    <Box width={9}>
-      <Text color="claude">{'▝▜█████▛▘'}</Text>
-    </Box>,
-    <Box width={9}>
-      <Text color="claude">{LEGS[pose.legs]}</Text>
-    </Box>,
+    pixelRow(T, BODY.head, pose.eyes),
+    pixelRow(T, BODY.body, pose.eyes),
+    pixelRow(T, LEGS[pose.legs], pose.eyes),
   ]
 }
 

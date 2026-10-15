@@ -1,0 +1,19 @@
+{
+  "name": "clawd-music",
+  "owner": {
+    "name": "Sansay411",
+    "url": "https://github.com/Sansay411"
+  },
+  "metadata": {
+    "description": "Clawd Music: a tiny radio player for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "clawd-music",
+      "source": "./",
+      "description": "A turntable band and a pane with a pixel mascot who swaps the records while lo-fi, jazz, classical and ambient radio plays.",
+      "category": "productivity",
+      "homepage": "https://github.com/Sansay411/Clawd_Music_Claude_Code_Plugin"
+    }
+  ]
+}

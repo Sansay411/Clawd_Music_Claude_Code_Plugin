@@ -1,0 +1,17 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manifests are valid JSON
+        run: jq . .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json > /dev/null
+      - name: No skills, agents or audio blobs
+        run: |
+          test ! -d skills && test ! -d agents
+          ! find . -path ./.git -prune -o -type f \( -name '*.mp3' -o -name '*.flac' \) -print | grep .

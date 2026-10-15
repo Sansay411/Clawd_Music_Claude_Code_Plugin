@@ -1,0 +1,22 @@
+{
+  "name": "clawd-music",
+  "version": "0.1.0",
+  "description": "Lo-fi, jazz, classical and ambient radio inside Claude Code, with a little pixel mascot who swaps the records.",
+  "author": {
+    "name": "Sansay411",
+    "url": "https://github.com/Sansay411"
+  },
+  "homepage": "https://github.com/Sansay411/Clawd_Music_Claude_Code_Plugin",
+  "repository": "https://github.com/Sansay411/Clawd_Music_Claude_Code_Plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "music",
+    "radio",
+    "lofi",
+    "player",
+    "ui",
+    "claude-code",
+    "mod"
+  ],
+  "types": "./types/index.d.ts"
+}

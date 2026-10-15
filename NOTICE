@@ -1,0 +1,28 @@
+Clawd Music
+Copyright 2026 Sansay411
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This is an unofficial community project. It is not affiliated with, endorsed
+by, or sponsored by Anthropic. "Claude", "Claude Code" and "Clawd" are
+trademarks of Anthropic, PBC and are used here only to describe what the
+project works with and what its pixel mascot resembles.
+
+Radio stations
+--------------
+config/sources.yml only points at public stream URLs run by third parties
+(for example SomaFM, WDCB, All Classical Portland, France Musique, Lofi Girl,
+Chillhop). No audio from them is bundled or redistributed. Each stream stays
+under its own operator's terms; please support the stations you enjoy. The
+list of stream URLs started from the public source list of the community
+"claude-music" plugin.
+
+Bundled assets
+--------------
+assets/chime.wav is generated for this project (two sine tones) and is
+released under the same Apache-2.0 license.
+
+Tools it can call (not bundled, installed by you)
+-------------------------------------------------
+ffplay (FFmpeg, LGPL/GPL) and yt-dlp (Unlicense). They run as separate
+processes on your machine; nothing of them is copied into this repository.

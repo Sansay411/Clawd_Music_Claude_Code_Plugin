@@ -8,9 +8,9 @@
 ![No telemetry](https://img.shields.io/badge/telemetry-none-brightgreen)
 
 ```
-   ▐▛▪ ▪▜▌        ○ lofi   ● jazz   ○ classical   ○ ambient
-  ▝▜█████▛▘  ◐    ○ electronic   ○ synthwave   ○ lounge   ○ indie
-    ▘▘ ▝▘   ▔▔▔▔▔
+   ██▀██████▀██
+ ▀▀████████████▀▀   ◐   ○ lofi  ● jazz  ○ classical  ○ ambient
+    ▀ ▀    ▀ ▀
 ```
 
 A three-row band sits above your prompt: Clawd stands at a turntable, the record

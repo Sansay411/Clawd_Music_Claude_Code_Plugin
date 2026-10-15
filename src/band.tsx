@@ -6,7 +6,7 @@
 import type { ButtonProps, ElementConstructor, RenderElement, RenderInput } from 'claude-code'
 import { toneOf } from './catalog'
 import type { Table } from './clawd'
-import { clawdRows, crateColumn, deckRows, gapColumn, volumeBar } from './clawd'
+import { CLAWD_COLUMNS, clawdRows, crateColumn, deckRows, gapColumn, volumeBar } from './clawd'
 import { pauseLabel, pauseWord, pose, statusWord } from './clawd-frames'
 import { press, quietly } from './controller'
 import type { Io } from './io'
@@ -59,7 +59,7 @@ export async function bandTree(
 
   const parts: RenderElement[] = []
   parts.push(
-    <Box flexDirection="column" width={9}>
+    <Box flexDirection="column" width={CLAWD_COLUMNS}>
       {clawdRows(T, p)}
     </Box>,
   )

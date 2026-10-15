@@ -14,7 +14,7 @@ const PANE_PROPS = {
   view: {},
 } as const
 
-test('the pane header shows the session and total lines, and the mood input, on terminal and desktop', async $ => {
+test('the pane header shows the title and the station line, and the mood input, on terminal and desktop', async $ => {
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({
       plugin: 'clawd-music',
@@ -23,8 +23,7 @@ test('the pane header shows the session and total lines, and the mood input, on 
       requestId: 'claude-music',
       props: PANE_PROPS,
     })
-    expect(await ui.find({ type: 'Text', text: 'session 0 min' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: 'total 0 min · 0 sessions' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'pick a genre below' })).toBeDefined()
     expect(await ui.find({ type: 'Input', key: 'mood' })).toBeDefined()
     await ui.unmount()
   }
@@ -38,7 +37,7 @@ test('the mobile pane draws the same header and no mood input', async $ => {
     requestId: 'claude-music',
     props: PANE_PROPS,
   })
-  expect(await ui.find({ type: 'Text', text: 'session 0 min' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'pick a genre below' })).toBeDefined()
   expect(await ui.find({ type: 'Input' })).toBeUndefined()
   await ui.unmount()
 })

@@ -4,34 +4,30 @@
 import { expect, test } from 'claude-code/testing'
 import { bandPlan, PLAIN_CELLS, setCells } from '../src/layout'
 
-test('below 40 columns the band keeps pause only and drops the deck', async () => {
-  for (let width = 20; width < 40; width++) {
+test('below 44 columns the band keeps pause only', async () => {
+  for (let width = 20; width < 44; width++) {
     const plan = bandPlan(width)
     expect(plan.showDeck).toBe(false)
     expect(plan.buttons).toBe('pause')
   }
 })
 
-test('from 40 to 44 the deck is dropped and three buttons show', async () => {
-  for (let width = 40; width < 45; width++) {
-    const plan = bandPlan(width)
-    expect(plan.showDeck).toBe(false)
-    expect(plan.buttons).toBe('three')
-  }
+test('the button tiers follow the width: three from 44, four from 54, six from 70', async () => {
+  expect(bandPlan(44)).toEqual({ showDeck: false, buttons: 'three', textColumns: 25 })
+  expect(bandPlan(53).buttons).toBe('three')
+  expect(bandPlan(54).buttons).toBe('four')
+  expect(bandPlan(69).buttons).toBe('four')
+  expect(bandPlan(70).buttons).toBe('six')
 })
 
-test('from 45 the deck shows, and the button tiers follow the brief at 56 and 74', async () => {
-  expect(bandPlan(45)).toEqual({ showDeck: true, buttons: 'three', textColumns: 25 })
-  expect(bandPlan(55).buttons).toBe('three')
-  expect(bandPlan(56).buttons).toBe('four')
-  expect(bandPlan(73).buttons).toBe('four')
-  expect(bandPlan(74).buttons).toBe('six')
-  expect(bandPlan(74).showDeck).toBe(true)
+test('the deck shows from 80 columns', async () => {
+  expect(bandPlan(79).showDeck).toBe(false)
+  expect(bandPlan(80)).toEqual({ showDeck: true, buttons: 'six', textColumns: 51 })
 })
 
-test('every width from 20 to 200 has room: the chosen buttons fit beside the art', async () => {
+test('every width from 28 to 200 has room: the chosen buttons fit beside the art', async () => {
   const misfits: number[] = []
-  for (let width = 20; width <= 200; width++) {
+  for (let width = 28; width <= 200; width++) {
     const plan = bandPlan(width)
     if (setCells(plan.buttons) > plan.textColumns) misfits.push(width)
   }

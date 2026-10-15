@@ -1,10 +1,9 @@
-// The band's width plan, pure. The band is Clawd (9 cells and a gap), then an
+// The band's width plan, pure. The band is Clawd (18 cells and a gap), then an
 // optional deck (7 cells, a gap, the crate, a gap), then the text column. Its
 // buttons are plain (`b: prev`), so each one's width is known up front.
 //
-// Widths: below 40 the band keeps pause only and drops the deck, as the brief
-// says. From 40 to 44 the deck is dropped too: three plain buttons do not fit
-// beside it. From 45 the deck is drawn and the buttons follow the tiers below.
+// Widths: below 44 the band keeps pause only; 44 to 53 shows three buttons, 54 to
+// 69 four, from 70 six; from 80 the deck is drawn too.
 
 export type ButtonSet = 'pause' | 'three' | 'four' | 'six'
 
@@ -26,10 +25,10 @@ export const PLAIN_CELLS = {
 } as const
 
 export const BUTTON_GAP = 1
-export const ART_COLUMNS = 10 // Clawd (9) and one gap
+export const ART_COLUMNS = 19 // Clawd (18) and one gap
 export const DECK_COLUMNS = 10 // deck (7), gap, crate (1), gap
-export const DECK_FROM = 45
-export const PAUSE_ONLY_BELOW = 40
+export const DECK_FROM = 80
+export const PAUSE_ONLY_BELOW = 44
 
 export function setCells(set: ButtonSet): number {
   const names: Array<keyof typeof PLAIN_CELLS> =
@@ -45,13 +44,8 @@ export function setCells(set: ButtonSet): number {
 }
 
 export function bandPlan(width: number): BandPlan {
-  if (width < PAUSE_ONLY_BELOW) {
-    return { showDeck: false, buttons: 'pause', textColumns: Math.max(0, width - ART_COLUMNS) }
-  }
-  if (width < DECK_FROM) {
-    return { showDeck: false, buttons: 'three', textColumns: width - ART_COLUMNS }
-  }
-  const textColumns = width - ART_COLUMNS - DECK_COLUMNS
-  const buttons: ButtonSet = width >= 74 ? 'six' : width >= 56 ? 'four' : 'three'
-  return { showDeck: true, buttons, textColumns }
+  const buttons: ButtonSet = width < PAUSE_ONLY_BELOW ? 'pause' : width < 54 ? 'three' : width < 70 ? 'four' : 'six'
+  const showDeck = width >= DECK_FROM
+  const textColumns = Math.max(0, width - ART_COLUMNS - (showDeck ? DECK_COLUMNS : 0))
+  return { showDeck, buttons, textColumns }
 }

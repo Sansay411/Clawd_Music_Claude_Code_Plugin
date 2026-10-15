@@ -29,67 +29,84 @@ export function volumeBar(T: Table, player: Player) {
   )
 }
 
-// Clawd is drawn as pixels, not font glyphs: every pixel is a cell with a
-// background colour, so the shape is the same in every font and surface (block
-// glyphs drew with gaps and bumps in the desktop app). Nine cells wide, three rows:
-//   .XEXXXEX.   head with two eyes
-//   XXXXXXXXX   body with the arms out
-//   .X.X.X.X.   four legs, which step between frames A and B
-const BODY: Record<'head' | 'body', string> = { head: '.XEXXXEX.', body: 'XXXXXXXXX' }
-const LEGS: Record<Pose['legs'], string> = { A: '.X.X.X.X.', B: '..X.X.X..' }
+// Clawd, the Claude Code mascot, drawn from half blocks (▀ ▄ █) on an 18 by 6
+// pixel grid, so it is 18 cells wide and 3 rows tall and each pixel is square:
+//
+//   y0   ...XXXXXXXXXXXX...       head
+//   y1   ...XX.XXXXXX.XX...       eyes are the two gaps (x5, x12)
+//   y2   .XXXXXXXXXXXXXXXX.       arms out
+//   y3   ...XXXXXXXXXXXX...       body
+//   y4   ....X.X....X.X....       four legs, which step between frames A and B
+//
+// Half blocks, not quadrant glyphs: quadrants drew with gaps in the desktop app.
+export const CLAWD_COLUMNS = 18
 
-// The eye as one cell on the clay body: dark when open, a mark when not. inverseText
-// is dark on the dark theme, so it reads as an eye on orange in both themes.
-const EYE_MARK: Record<Pose['eyes'], string> = { open: ' ', squint: '^', blink: '-', asleep: '-', dead: '×' }
+const EYE_X = [5, 12]
+const LEG_X: Record<Pose['legs'], number[]> = { A: [4, 6, 11, 13], B: [5, 7, 10, 12] }
 
-function pixelRow(T: Table, pattern: string, eyes: Pose['eyes']) {
+// Whether pixel (x, y) is clay. Open eyes are holes in y1; closed eyes fill them.
+function clay(x: number, y: number, legs: Pose['legs'], eyesOpen: boolean): boolean {
+  if (y === 0 || y === 3) return x >= 3 && x <= 14
+  if (y === 1) return x >= 3 && x <= 14 && (!EYE_X.includes(x) || !eyesOpen)
+  if (y === 2) return x >= 1 && x <= 16
+  if (y === 4) return LEG_X[legs].includes(x)
+  return false
+}
+
+const EYE_MARK: Partial<Record<Pose['eyes'], string>> = { squint: '^', blink: '-', asleep: '-', dead: '×' }
+
+// One text row: two pixel rows per cell, as runs of the same glyph.
+function clawdRow(T: Table, pose: Pose, row: number) {
   const { Box, Text } = T
-  const cells: ReturnType<typeof Text>[] = []
-  let i = 0
-  while (i < pattern.length) {
-    const kind = pattern[i]
-    let j = i
-    while (j < pattern.length && pattern[j] === kind) j++
-    const n = j - i
-    if (kind === '.') {
-      cells.push(<Text key={`s${i}`}>{' '.repeat(n)}</Text>)
-    } else if (kind === 'E') {
-      const open = eyes === 'open'
-      cells.push(
-        <Text
-          key={`e${i}`}
-          backgroundColor={open ? 'inverseText' : 'claude'}
-          color={eyes === 'dead' ? 'error' : 'inverseText'}
-          bold
-        >
-          {EYE_MARK[eyes]}
-        </Text>,
-      )
-    } else {
-      cells.push(
-        <Text key={`b${i}`} backgroundColor="claude">
-          {' '.repeat(n)}
-        </Text>,
-      )
-    }
-    i = j
+  const eyesOpen = pose.eyes === 'open'
+  const top = row * 2
+  const out: ReturnType<typeof Text>[] = []
+  let run = ''
+  let glyph = ' '
+  const flush = (key: string) => {
+    if (run === '') return
+    out.push(
+      glyph === ' ' ? (
+        <Text key={key}>{run}</Text>
+      ) : (
+        <Text key={key} color="claude">
+          {run}
+        </Text>
+      ),
+    )
+    run = ''
   }
+  for (let x = 0; x < CLAWD_COLUMNS; x++) {
+    const mark = row === 0 && EYE_X.includes(x) ? EYE_MARK[pose.eyes] : undefined
+    if (mark !== undefined) {
+      flush(`r${x}`)
+      out.push(
+        <Text key={`m${x}`} backgroundColor="claude" color={pose.eyes === 'dead' ? 'error' : 'inverseText'} bold>
+          {mark}
+        </Text>,
+      )
+      glyph = ' '
+      continue
+    }
+    const t = clay(x, top, pose.legs, eyesOpen)
+    const b = clay(x, top + 1, pose.legs, eyesOpen)
+    const g = t && b ? '█' : t ? '▀' : b ? '▄' : ' '
+    if (g !== glyph) flush(`r${x}`)
+    glyph = g
+    run += g
+  }
+  flush('rend')
   return (
-    <Box flexDirection="row" width={9}>
-      {cells}
+    <Box flexDirection="row" width={CLAWD_COLUMNS}>
+      {out}
     </Box>
   )
 }
 
 export const EYE_COLOR: ThemeKey = 'inverseText'
 
-// Clawd, nine cells wide: head with eyes, body with arms, legs.
 export function clawdRows(T: Table, pose: Pose) {
-  return [
-    pixelRow(T, BODY.head, pose.eyes),
-    pixelRow(T, BODY.body, pose.eyes),
-    pixelRow(T, LEGS[pose.legs], pose.eyes),
-  ]
+  return [clawdRow(T, pose, 0), clawdRow(T, pose, 1), clawdRow(T, pose, 2)]
 }
 
 function discCell(T: Table, disc: Disc | null, width: number) {

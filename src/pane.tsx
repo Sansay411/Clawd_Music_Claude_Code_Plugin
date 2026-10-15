@@ -8,8 +8,8 @@
 import type { ButtonProps, ElementConstructor, InputProps, RenderElement, RenderNode } from 'claude-code'
 import { genreStations, toneOf } from './catalog'
 import type { Table } from './clawd'
-import { clawdRows, deckRows, gapColumn, volumeBar } from './clawd'
-import { badgeOf, pauseLabel, pose } from './clawd-frames'
+import { CLAWD_COLUMNS, clawdRows, gapColumn, volumeBar } from './clawd'
+import { badgeOf, pauseWord, pose } from './clawd-frames'
 import { actMood, press, quietly } from './controller'
 import type { Io } from './io'
 import { noticeColor, readSnapshot } from './state'
@@ -19,8 +19,7 @@ export type PaneTable = Table & { Button: ElementConstructor<ButtonProps> }
 export type InputConstructor = ElementConstructor<InputProps>
 
 const MOOD_PLACEHOLDER = 'mood, e.g. rainy focus'
-const HINT =
-  'Pause and volume restart the stream: live radio has no position. Pick a genre or a station, or type a mood.'
+const HINT = 'Press a genre, or type a mood. Esc closes; the music keeps playing.'
 const STATION_CELLS = 40
 const MIN_STATION_CELLS = 16
 
@@ -72,10 +71,10 @@ function buildPane(
         : player.status === 'error'
           ? 'error'
           : 'subtle'
-  const sessionLine = `session ${Math.round(session.sessionMinutes)} min`
-  const totalLine = `total ${Math.round(session.totalMinutes)} min · ${session.totalSessions} sessions`
   const stationCells = Math.max(MIN_STATION_CELLS, Math.min(STATION_CELLS, bodyColumns - 8))
+  const stationName = player.station !== null ? player.station.name : 'pick a genre below'
 
+  // Minimal header: Clawd, then three short lines.
   const headerText = (
     <Box flexDirection="column" flexGrow={1}>
       <Box flexDirection="row">
@@ -85,19 +84,14 @@ function buildPane(
         <Text>{'  '}</Text>
         <Text color={badgeColor}>{`${badge.glyph} ${badge.word}`}</Text>
       </Box>
+      <Text wrap="truncate-end">{stationName}</Text>
       {volumeBar(T, player)}
-      <Text dimColor>{sessionLine}</Text>
-      <Text dimColor>{totalLine}</Text>
     </Box>
   )
   const header = (
     <Box flexDirection="row">
-      <Box flexDirection="column" width={9}>
+      <Box flexDirection="column" width={CLAWD_COLUMNS}>
         {clawdRows(T, p)}
-      </Box>
-      {gapColumn(T)}
-      <Box flexDirection="column" width={7}>
-        {deckRows(T, p)}
       </Box>
       {gapColumn(T)}
       {headerText}
@@ -126,64 +120,36 @@ function buildPane(
   ))
 
   const stations = player.genre !== null ? genreStations(catalog, player.genre) : []
-  const stationButtons = stations.map((station, index) => (
-    <Button
-      key={`st-${index}`}
-      label={truncate(`${index + 1}. ${station.name}`, stationCells)}
-      variant={player.station !== null && player.station.key === station.key ? 'primary' : undefined}
-      onPress={() => quietly(press(io, { type: 'playStation', key: station.key }))}
-    />
-  ))
-  const stationsLabel = player.genre !== null ? `stations · ${player.genre}` : 'stations · press a genre above'
+  const stationButtons = stations.map((station, index) => {
+    const current = player.station !== null && player.station.key === station.key
+    return (
+      <Button
+        key={`st-${index}`}
+        plain
+        label={truncate(`${current ? '▸' : ' '} ${station.name}`, stationCells)}
+        onPress={() => quietly(press(io, { type: 'playStation', key: station.key }))}
+      />
+    )
+  })
+  const stationsLabel = player.genre !== null ? `stations · ${player.genre}` : 'stations'
 
+  const ctl = (key: string, hotkey: string, label: string, action: Parameters<typeof press>[1]) => (
+    <Button key={`c-${key}`} plain hotkey={hotkey} label={label} onPress={() => quietly(press(io, action))} />
+  )
   const controls = (
     <Box flexDirection="row" flexWrap="wrap" gap={1}>
-      <Button key="c-prev" hotkey="b" label="prev b" onPress={() => quietly(press(io, { type: 'prev' }))} />
-      <Button
-        key="c-pause"
-        hotkey="p"
-        variant="primary"
-        label={pauseLabel(player)}
-        onPress={() => quietly(press(io, { type: 'toggle' }))}
-      />
-      <Button key="c-next" hotkey="n" label="next n" onPress={() => quietly(press(io, { type: 'next' }))} />
-      <Button
-        key="c-mute"
-        hotkey="m"
-        label={player.muted ? 'unmute m' : 'mute m'}
-        onPress={() => quietly(press(io, { type: 'mute' }))}
-      />
-      <Button
-        key="c-down"
-        hotkey="d"
-        label="vol- d"
-        onPress={() => quietly(press(io, { type: 'volumeStep', delta: -10 }))}
-      />
-      <Button
-        key="c-up"
-        hotkey="u"
-        label="vol+ u"
-        onPress={() => quietly(press(io, { type: 'volumeStep', delta: 10 }))}
-      />
-      <Button key="c-stop" hotkey="s" label="stop s" onPress={() => quietly(press(io, { type: 'stop' }))} />
-    </Box>
-  )
-
-  const chip = (hotkey: string, word: string, label: string) => (
-    <Button key={`chip-${hotkey}`} hotkey={hotkey} label={label} onPress={() => quietly(actMood(io, word))} />
-  )
-  const chips = (
-    <Box flexDirection="row" flexWrap="wrap" gap={1}>
-      {chip('f', 'focus', 'f focus')}
-      {chip('c', 'chill', 'c chill')}
-      {chip('l', 'late', 'l late')}
-      {chip('e', 'energy', 'e energy')}
+      {ctl('prev', 'b', 'prev', { type: 'prev' })}
+      {ctl('pause', 'p', pauseWord(player), { type: 'toggle' })}
+      {ctl('next', 'n', 'next', { type: 'next' })}
+      {ctl('mute', 'm', player.muted ? 'unmute' : 'mute', { type: 'mute' })}
+      {ctl('down', 'd', 'vol-', { type: 'volumeStep', delta: -10 })}
+      {ctl('up', 'u', 'vol+', { type: 'volumeStep', delta: 10 })}
+      {ctl('stop', 's', 'stop', { type: 'stop' })}
     </Box>
   )
 
   const children: RenderNode[] = [
     header,
-    <Text dimColor>genres</Text>,
     <Box flexDirection="row" flexWrap="wrap" gap={1}>
       {sleeves}
     </Box>,
@@ -197,13 +163,11 @@ function buildPane(
         key: 'mood',
         value: pane.moodDraft,
         placeholder: MOOD_PLACEHOLDER,
-        submitLabel: 'go',
         onInput: (value: string) => quietly(io.pane.update(s => ({ ...s, moodDraft: value }))),
         onSubmit: (value: string) => quietly(submitMood(io, value)),
       }),
     )
   }
-  children.push(chips)
   // A catalog that did not parse is the notice until it is fixed. Orange only on a
   // surface that cannot play (see noticeColor); elsewhere the text keeps its colour.
   const notice = catalog.error !== null ? `config/sources.yml: ${catalog.error}` : pane.notice
